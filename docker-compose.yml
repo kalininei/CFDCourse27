@@ -1,0 +1,18 @@
+services:
+  dev-environment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        HOST_UID: ${USER_ID:-1000}
+        HOST_GID: ${GROUP_ID:-1000}
+    container_name: cfd27
+    volumes:
+      - .:/app
+      - ./.vscode-server:/home/user/.vscode-server
+    working_dir: /app
+    environment:
+      - TZ=Europe/Moscow
+    tty: true
+    stdin_open: true
+    restart: unless-stopped

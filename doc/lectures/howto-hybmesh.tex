@@ -1,0 +1,18 @@
+\subsection{Hybmesh}
+\label{sec:hybmesh}
+
+Генератор сеток на основе композитного подхода.
+Работает на основе python-скрипотов.
+Полная документация \url{http://kalininei.github.io/HybMesh/index.html}
+
+\subsubsection{Построение сеток}
+Скрипты построения сетки лежат в папке \ename{/app/test-data}.
+Для запуска скрипта построения сетки следует находясь в контейнере перейти в эту папку
+и запустить (например для \ename{trigrid.py})
+\begin{shelloutput}
+cd /app/test-data
+hybmesh -sx trigrid.py
+\end{shelloutput}
+
+При первом запуске система предложит собрать и установить hybmesh из исходников.
+Следует согласиться, введя \cvar{y}. Первое построение может занять несколько минут.

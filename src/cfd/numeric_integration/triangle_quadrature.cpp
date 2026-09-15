@@ -1,0 +1,111 @@
+#include "triangle_quadrature.hpp"
+
+using namespace cfd;
+
+std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss1() {
+    static auto quad =
+        std::make_shared<Quadrature>(std::vector<Point>{{1.0 / 3.0, 1.0 / 3.0}}, std::vector<double>{0.5});
+
+    return quad;
+}
+
+std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss2() {
+    static auto quad = std::make_shared<Quadrature>(
+        std::vector<Point>{
+            {1.0 / 6.0, 1.0 / 6.0},
+            {2.0 / 3.0, 1.0 / 6.0},
+            {1.0 / 6.0, 2.0 / 3.0},
+        },
+        std::vector<double>{1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0});
+
+    return quad;
+}
+
+std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss3() {
+    static auto quad = std::make_shared<Quadrature>(
+        std::vector<Point>{
+            {1.0 / 3.0, 1.0 / 3.0},
+            {1.0 / 5.0, 1.0 / 5.0},
+            {1.0 / 5.0, 3.0 / 5.0},
+            {3.0 / 5.0, 1.0 / 5.0},
+        },
+        std::vector<double>{-27.0 / 96.0, 25.0 / 96.0, 25.0 / 96.0, 25.0 / 96.0});
+
+    return quad;
+}
+
+std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss4() {
+    static auto quad = std::make_shared<Quadrature>(
+        std::vector<Point>{{0.44594849091597, 0.44594849091597},
+                           {0.44594849091597, 0.10810301816807},
+                           {0.10810301816807, 0.44594849091597},
+                           {0.09157621350977, 0.09157621350977},
+                           {0.09157621350977, 0.81684757298046},
+                           {0.81684757298046, 0.09157621350977}},
+        std::vector<double>{0.22338158967801 / 2.0, 0.22338158967801 / 2.0, 0.22338158967801 / 2.0,
+                            0.10995174365532 / 2.0, 0.10995174365532 / 2.0, 0.10995174365532 / 2.0});
+
+    return quad;
+}
+
+std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss5() {
+    static auto quad = std::make_shared<Quadrature>(
+        std::vector<Point>{{0.33333333333333, 0.33333333333333},
+                           {0.47014206410511, 0.47014206410511},
+                           {0.47014206410511, 0.05971587178977},
+                           {0.05971587178977, 0.47014206410511},
+                           {0.10128650732346, 0.10128650732346},
+                           {0.10128650732346, 0.79742698535309},
+                           {0.79742698535309, 0.10128650732346}},
+        std::vector<double>{0.22500000000000 / 2, 0.13239415278851 / 2, 0.13239415278851 / 2, 0.13239415278851 / 2,
+                            0.12593918054483 / 2, 0.12593918054483 / 2, 0.12593918054483 / 2});
+    return quad;
+}
+
+std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss6() {
+    static auto quad = std::make_shared<Quadrature>(
+        std::vector<Point>{
+            {0.24928674517091, 0.24928674517091},
+            {0.24928674517091, 0.50142650965818},
+            {0.50142650965818, 0.24928674517091},
+            {0.06308901449150, 0.06308901449150},
+            {0.06308901449150, 0.87382197101700},
+            {0.87382197101700, 0.06308901449150},
+            {0.31035245103378, 0.63650249912140},
+            {0.63650249912140, 0.05314504984482},
+            {0.05314504984482, 0.31035245103378},
+            {0.63650249912140, 0.31035245103378},
+            {0.31035245103378, 0.05314504984482},
+            {0.05314504984482, 0.63650249912140},
+        },
+        std::vector<double>{0.11678627572638 / 2, 0.11678627572638 / 2, 0.11678627572638 / 2, 0.05084490637021 / 2,
+                            0.05084490637021 / 2, 0.05084490637021 / 2, 0.08285107561837 / 2, 0.08285107561837 / 2,
+                            0.08285107561837 / 2, 0.08285107561837 / 2, 0.08285107561837 / 2, 0.08285107561837 / 2});
+    return quad;
+}
+
+template<int P>
+std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss() {
+    if constexpr (P == 1) {
+        return quadrature_triangle_gauss1();
+    } else if constexpr (P == 2) {
+        return quadrature_triangle_gauss2();
+    } else if constexpr (P == 3) {
+        return quadrature_triangle_gauss3();
+    } else if constexpr (P == 4) {
+        return quadrature_triangle_gauss4();
+    } else if constexpr (P == 5) {
+        return quadrature_triangle_gauss5();
+    } else if constexpr (P == 6) {
+        return quadrature_triangle_gauss6();
+    } else {
+        static_assert(false);
+    }
+}
+
+template std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss<1>();
+template std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss<2>();
+template std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss<3>();
+template std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss<4>();
+template std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss<5>();
+template std::shared_ptr<const Quadrature> cfd::quadrature_triangle_gauss<6>();

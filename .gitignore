@@ -1,0 +1,12 @@
+/build*/
+*/__pycache__/
+/local_data/
+/.vscode-server/
+/.vscode/
+~*
+*.swp
+*.swo
+*.kate-swp
+a.gdb
+.syntastic_cpp_config_file
+_minted

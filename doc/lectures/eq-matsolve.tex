@@ -1,0 +1,179 @@
+\subsection{Методы решения систем уравнений}
+Будем рассматривать систему 
+\begin{equation}
+\label{eq:sae_generic}
+\mat A u = f.
+\end{equation}
+
+\subsubsection{Простые итерационные алгоритмы}
+\label{sec:sae_simple}
+\subsubsubsection{Метод Якоби}
+\label{sec:sae_jacobi}
+Будем рассматривать систему уравнений вида
+\begin{equation*}
+    \sum_{j=0}^{N-1} A_{ij} u_j = r_i, \quad i = \overline{0, N-1}
+\end{equation*}
+относительно неизвестного сеточного вектора $\{u\}$.
+
+В классическом виде алгоритм Якоби формулируется в виде
+\begin{equation*}
+    \hat u_i = \frac{1}{A_{ii}}\left(r_i - \sum_{j\neq i} A_{ij}{u_j}\right)
+\end{equation*}
+
+Произведём некоторые преобразования
+\begin{align*}
+    \hat u_i &= \frac{1}{A_{ii}}\left(r_i - \sum_{j} A_{ij}{u_j} + A_{ii}u_i\right) \\
+             &= u_i + \frac{1}{A_{ii}}\left(r_i - \sum_{j} A_{ij}{u_j}\right)
+\end{align*}
+
+Таким образом, программировать итерацию этого алгоритма, обновляющую значения массива $\{u\}$, можно в виде
+\begin{align*}
+    &\check u = u; \\
+    &\textbf{for } i=\overline{0, N-1} \\ 
+    &\quad u_i \mathrel{{+}{=}} \frac{1}{A_{ii}}\left(r_i - \sum_{j=0}^{N-1} A_{ij}{\check u_j}\right)\\
+    &\textbf{endfor} \\
+\end{align*}
+
+\subsubsubsection{Метод Зейделя}
+\label{sec:sae_seidel}
+
+Формулируется в виде
+\begin{equation*}
+    \hat u_i = \frac{1}{A_{ii}}\left(r_i - \sum_{j<i} A_{ij}{\hat u_j} - \sum_{j>i} A_{ij}{u_j} \right).
+\end{equation*}
+
+Поскольку этот метод неявный относительно уже найденных на итерации значений, то в отличии от метода Якоби этот алгоритм не требует создания временного массива $\hat u$
+при программировании. Псевдокод для реализации итерации этого метода можно записать как
+
+\begin{align*}
+    &\textbf{for } i=\overline{0, N-1} \\ 
+    &\quad u_i \mathrel{{+}{=}} \frac{1}{A_{ii}}\left(r_i - \sum_{j=0}^{N-1} A_{ij}{u_j}\right)\\
+    &\textbf{endfor}
+\end{align*}
+
+
+\subsubsubsection{Метод последовательных верхних релаксаций SOR}
+\label{sec:sae_sor}
+
+Этот метод основан на добавлении к решению результатов итераций Зейделя с
+коэффициентом $\omega > 1$. То есть он изменияет решение по тому же
+принципу, что и метод Зейделя, но искуственно увеличивает эту добавку.
+
+Формулируется этот метод в виде
+\begin{equation*}
+    \hat u_i = (1-\omega) u_i + \frac{\omega}{A_{ii}}\left(r_i - \sum_{j<i} A_{ij}{\hat u_j} - \sum_{j>i} A_{ij}{u_j} \right).
+\end{equation*}
+Для устойчивости метода необходимо $\omega < 2$. В частности, для одномерных задач,
+заданных на единичном отрезке, для оптимальной сходимости можно использовать соотношение $\omega \approx 2 - 5 h$,
+где $h$ -- шаг сетки.
+
+Итерация этого метода по аналогии с методом Зейделя может быть запрограммирована в виде
+
+\begin{align*}
+    &\textbf{for } i=\overline{0, N-1} \\ 
+    &\quad u_i \mathrel{{+}{=}} \frac{\omega}{A_{ii}}\left(r_i - \sum_{j=0}^{N-1} A_{ij}{u_j}\right)\\
+    &\textbf{endfor}
+\end{align*}
+
+\subsubsection{Метод коррекции поправки}
+\label{sec:it_def_corr}
+Пусть $u^n$ -- некоторое приближённое решение системы \cref{eq:sae_generic} на итерационном слое.
+Введём невязки как
+\begin{equation}
+\label{eq:sae_rn}
+r^n = f - \left(\mat A u\right)^n
+\end{equation}
+и поправку для перехода на следующий итерационный слой:
+\begin{equation*}
+\triangle u^n = u^{n+1} - u^{n}.
+\end{equation*}
+Обобщённый процесс с предобуславливателем $\mat B$ для исходной системы можно записать в виде
+\begin{equation}
+\label{eq:sae_un_problem}
+\mat B \triangle u^n = r^n
+\end{equation}
+
+Этот процесс является согласованным: если в качестве $u^n$ взять точное решение системы \cref{eq:sae_generic},
+то $r^n = 0$, и следовательно, $\triangle u^n = 0$.
+
+Алгоритм решения исходной системы будет иметь следующий вид:
+\begin{enumerate}
+\item задать начальное приближение $u^n$ при $n=0$
+\item вычислить невязку $r^n$ из \cref{eq:sae_rn}
+\item если норма невязки $||r^n|| < \epsilon$, то завершить итерации
+\item решив систему \cref{eq:sae_un_problem} получить поправку $\triangle u^n = \mat B^{-1} r^n$.
+\item найти следующее приближение $u^{n+1} = u^{n} + \triangle u^{n}$
+\item увеличить счётчик $n = n + 1$ и перейти на шаг 2.
+\end{enumerate}
+
+Конкретный итерационный метод целиком определяется выбором предобуславливаетеля.
+В качестве предобуславливателя обычно выбирают матрицу, похожую на $\mat A$, но при этом легкообратимую.
+Некоторые примеры:
+\begin{itemize}
+\item если выбрать константу $B = 1/\gamma$, то получим
+простой итерационный процесс Ричардсона с шагом $\gamma$.
+\item диагональная часть исходного оператора $B = \{a_{ii}\}$ приводит к методу Якоби \secref{sec:sae_jacobi}
+\item нижняя треугольная часть исходной матрицы $B = \{a_{ij}\}, j\leq i$ даёт метод Зейделя \secref{sec:sae_seidel}.
+\end{itemize}
+
+Если в качестве предобуславливателя взять изходную матрицу $\mat A$, 
+то итерационный процесс сойдётся за одну итерацию. Действительно из \cref{eq:sae_rn,eq:sae_un_problem}:
+\begin{equation*}
+u^{n+1} = u^{n} + A^{-1}(f - A u^n) = A^{-1} f
+\end{equation*}
+
+Это метод требует прямого обращения только предобуславливаетеля $\mat B$, но не 
+исходного оператора $\mat A$, поэтому он может быть применён в том числе и для решения нелинейных систем.
+
+Для обращения самого предобуславливателя в свою очередь так же может
+быть использован итерационный алгоритм. Этот итерационный процесс будет являться
+внутриннем, поэтому не будет требовать глубокой сходимости.
+Зачастую для обращения предобуславливателя достаточно сделать 2-3 поверхностные итерации
+одним из простых методов из \secref{sec:sae_simple}.
+
+\subsubsection{Методы подпространств Крылова}
+
+\subsubsubsection{Итерационный процесс BiCGStab с предобуславливателем}
+\label{sec:bicgstab}
+
+Инициализация
+\begin{enumerate}
+\item есть начальное приближение $u^0$
+\item вычисляем невязку
+$$r_0 = f - \mat A u_0$$
+\item предобуславливаем невязку
+$$r_0' = \matinv{M}r_0$$
+\item запоминаем начальную невязку
+$$\tilde r = r_0'$$
+\item инициализируем
+$$p_0' = v_0' = 0, \quad \rho_0 = \omega_0 = \alpha_0 = 1.0$$
+\end{enumerate}
+
+Далее на $k$-ой итерации
+
+\begin{enumerate}
+\item проецируем текущую невязку на начальную
+$$\rho_k = \tilde r^T \cdot r'_{k-1}$$
+\item коэффициент $\beta$:
+$$\beta_k = \frac{\rho_k}{\rho_{k-1}} \frac{\alpha_{k-1}}{\omega_{k-1}}$$
+\item Обновляем направление
+$$p'_k = r'_{k-1} + \beta_k \left( p'_{k-1} - \omega_{k-1} v'_{k-1} \right)$$
+\item
+$$v_k'=\matinv{M}\mat A p_k'$$
+\item коэффициент $\alpha$
+$$\alpha_k = \frac{\rho_k}{\tilde r^T \cdot v'_k}$$
+\item Промежуточный вектор $s$:
+$$s'_k =  r'_{k-1} - \alpha_k v'_k$$
+\item Промежуточный вектор $t$
+$$t'_k = \matinv{M}\mat{A}s_k'$$
+\item множитель $\omega$
+$$\omega_k = \frac{ (t_k')^T \cdot s'_k} { (t_k')^T \cdot t_k' }.$$
+\item обновляем невязку и решение
+\begin{equation}
+\label{eq:schwarz_bicgstab}
+\begin{aligned}
+& u_k = u_{k-1} + \alpha_k p'_k + \omega_k s'_k, \\
+& r'_k = s'_k - \omega_k t'_k
+\end{aligned}
+\end{equation}
+\end{enumerate}
