@@ -2,9 +2,10 @@ FROM ubuntu:24.04
 
 # ================ INSTALL DEPS
 RUN apt-get update  && \
-    apt-get install -y gcc-14  g++-14 cmake gdb valgrind  && \
+    apt-get install -y gcc-14  g++-14 gfortran-14 cmake gdb valgrind  && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100 && \
+    update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-14 100 && \
     update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100 && \
     apt-get install -y libboost-dev  && \
     apt-get install -y git  && \
@@ -43,6 +44,7 @@ USER user
 # ================ misc
 RUN echo 'export CC=/usr/bin/gcc-14' >> /home/user/.bashrc  && \
     echo 'export CXX=/usr/bin/g++-14' >> /home/user/.bashrc && \
+    echo 'export FC=/usr/bin/gfortran-14' >> /home/user/.bashrc && \
     mkdir -p /home/user/.vscode-server && \
     printf '\n\
 # run mc remembering last mc directory on exit\n\

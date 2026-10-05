@@ -53,8 +53,8 @@ void UnstructuredGrid2D::Cache::need_face_normals(const UnstructuredGrid2D& grid
         return;
     }
     for (size_t iface = 0; iface < grid.n_faces(); ++iface) {
-        Point p0 = grid.point(grid._face_points[iface][0]);
-        Point p1 = grid.point(grid._face_points[iface][1]);
+        Point p0 = grid.point(grid.face_points_[iface][0]);
+        Point p1 = grid.point(grid.face_points_[iface][1]);
         Vector s = p1 - p0;
         face_normals.push_back(Vector(s.y, -s.x) / vector_abs(s));
     }
@@ -65,8 +65,8 @@ void UnstructuredGrid2D::Cache::need_face_areas(const UnstructuredGrid2D& grid) 
         return;
     }
     for (size_t iface = 0; iface < grid.n_faces(); ++iface) {
-        Point p0 = grid.point(grid._face_points[iface][0]);
-        Point p1 = grid.point(grid._face_points[iface][1]);
+        Point p0 = grid.point(grid.face_points_[iface][0]);
+        Point p1 = grid.point(grid.face_points_[iface][1]);
         double d = vector_abs(p1 - p0);
         face_areas.push_back(d);
     }
@@ -94,8 +94,8 @@ void UnstructuredGrid2D::Cache::need_tab_cell_face(const UnstructuredGrid2D& gri
 
 UnstructuredGrid2D::UnstructuredGrid2D(const std::vector<Point>& points,
                                        const std::vector<std::vector<size_t>>& cell_point)
-    : _points(points),
-      _cells(cell_point) {
+    : points_(points),
+      cells_(cell_point) {
     initialize();
 }
 
@@ -115,23 +115,23 @@ UnstructuredGrid2D::UnstructuredGrid2D(const IGrid2D& grid)
     : UnstructuredGrid2D(grid.points(), assemble_cell_point(grid)) {}
 
 void UnstructuredGrid2D::validate() {
-    if (_cells.size() == 0) {
+    if (cells_.size() == 0) {
         throw std::runtime_error("no cells in grid");
     }
-    if (_points.size() == 0) {
+    if (points_.size() == 0) {
         throw std::runtime_error("no points in grid");
     }
 }
 
 void UnstructuredGrid2D::initialize() {
-    _cache.clear();
+    cache_.clear();
     validate();
     // assemble faces
     std::vector<std::array<size_t, 3>> point_point_cell;
     for (size_t icell = 0; icell < n_cells(); ++icell) {
-        size_t p0 = _cells[icell].back();
-        for (size_t i = 0; i < _cells[icell].size(); ++i) {
-            size_t p1 = _cells[icell][i];
+        size_t p0 = cells_[icell].back();
+        for (size_t i = 0; i < cells_[icell].size(); ++i) {
+            size_t p1 = cells_[icell][i];
             point_point_cell.push_back({p0, p1, icell});
             std::swap(p0, p1);
         }
@@ -154,85 +154,85 @@ void UnstructuredGrid2D::initialize() {
     std::sort(point_point_cell.begin(), point_point_cell.end(), sorter_less);
 
     auto add_face = [this](const std::array<size_t, 3>& v) {
-        _face_points.push_back({v[0], v[1]});
-        _face_cells.push_back({v[2], INVALID_INDEX});
+        face_points_.push_back({v[0], v[1]});
+        face_cells_.push_back({v[2], INVALID_INDEX});
     };
     for (size_t i = 0; i < point_point_cell.size(); ++i) {
         if (i == 0 || sorter_less(point_point_cell[i - 1], point_point_cell[i])) {
             add_face(point_point_cell[i]);
         } else {
-            _face_cells.back()[1] = point_point_cell[i][2];
+            face_cells_.back()[1] = point_point_cell[i][2];
         }
     }
-    for (size_t i = 0; i < _face_points.size(); ++i) {
-        if (_face_points[i][0] > _face_points[i][1]) {
-            std::swap(_face_points[i][0], _face_points[i][1]);
-            std::swap(_face_cells[i][0], _face_cells[i][1]);
+    for (size_t i = 0; i < face_points_.size(); ++i) {
+        if (face_points_[i][0] > face_points_[i][1]) {
+            std::swap(face_points_[i][0], face_points_[i][1]);
+            std::swap(face_cells_[i][0], face_cells_[i][1]);
         }
     }
 }
 
 size_t UnstructuredGrid2D::n_points() const {
-    return _points.size();
+    return points_.size();
 }
 
 size_t UnstructuredGrid2D::n_cells() const {
-    return _cells.size();
+    return cells_.size();
 }
 
 size_t UnstructuredGrid2D::n_faces() const {
-    return _face_cells.size();
+    return face_cells_.size();
 }
 
 Point UnstructuredGrid2D::point(size_t ipoint) const {
-    return _points[ipoint];
+    return points_[ipoint];
 }
 
 Point UnstructuredGrid2D::cell_center(size_t icell) const {
-    _cache.need_cell_centers(*this);
-    return _cache.cell_centers[icell];
+    cache_.need_cell_centers(*this);
+    return cache_.cell_centers[icell];
 }
 
 double UnstructuredGrid2D::cell_volume(size_t icell) const {
-    _cache.need_cell_volumes(*this);
-    return _cache.cell_volumes[icell];
+    cache_.need_cell_volumes(*this);
+    return cache_.cell_volumes[icell];
 }
 
 Vector UnstructuredGrid2D::face_normal(size_t iface) const {
-    _cache.need_face_normals(*this);
-    return _cache.face_normals[iface];
+    cache_.need_face_normals(*this);
+    return cache_.face_normals[iface];
 }
 
 double UnstructuredGrid2D::face_area(size_t iface) const {
-    _cache.need_face_areas(*this);
-    return _cache.face_areas[iface];
+    cache_.need_face_areas(*this);
+    return cache_.face_areas[iface];
 }
 
 Point UnstructuredGrid2D::face_center(size_t iface) const {
-    Point p0 = point(_face_points[iface][0]);
-    Point p1 = point(_face_points[iface][1]);
+    Point p0 = point(face_points_[iface][0]);
+    Point p1 = point(face_points_[iface][1]);
     return (p0 + p1) / 2.0;
 }
 
 std::vector<Point> UnstructuredGrid2D::points() const {
-    return _points;
+    return points_;
 }
 
 std::vector<size_t> UnstructuredGrid2D::tab_cell_point(size_t icell) const {
-    return _cells[icell];
+    return cells_[icell];
 }
 
 std::array<size_t, 2> UnstructuredGrid2D::tab_face_cell(size_t iface) const {
-    return _face_cells[iface];
+    return face_cells_[iface];
 }
 
 std::vector<size_t> UnstructuredGrid2D::tab_face_point(size_t iface) const {
-    return std::vector<size_t>(_face_points[iface].begin(), _face_points[iface].end());
+    return std::vector<size_t>(face_points_[iface].begin(), face_points_[iface].end());
 }
 
 std::vector<size_t> UnstructuredGrid2D::tab_cell_face(size_t icell) const {
-    _cache.need_tab_cell_face(*this);
-    return _cache.tab_cell_face[icell];
+    cache_.need_tab_cell_face(*this);
+    return cache_.tab_cell_face[icell];
 }
 
 void UnstructuredGrid2D::save_vtk(std::string fname) const {
@@ -375,10 +375,14 @@ UnstructuredGrid2D UnstructuredGrid2D::vtk_read(std::string filename, bool silen
     }
 }
 
+std::shared_ptr<UnstructuredGrid2D> UnstructuredGrid2D::vtk_read_p(std::string filename, bool silent) {
+    return std::make_shared<UnstructuredGrid2D>(vtk_read(filename, silent));
+}
+
 UnstructuredGrid2D UnstructuredGrid2D::copy_modify(std::function<Point(Point)> modifier) const {
     std::vector<Point> new_points(n_points());
     for (size_t i = 0; i < n_points(); ++i) {
         new_points[i] = modifier(point(i));
     }
-    return UnstructuredGrid2D(new_points, _cells);
+    return UnstructuredGrid2D(new_points, cells_);
 }

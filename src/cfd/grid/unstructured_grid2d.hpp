@@ -33,6 +33,7 @@ public:
      * @param filename  vtk ascii legacy format file name
      */
     static UnstructuredGrid2D vtk_read(std::string filename, bool silent = false);
+    static std::shared_ptr<UnstructuredGrid2D> vtk_read_p(std::string filename, bool silent = false);
 
     // overridden methods
     size_t n_points() const override;
@@ -52,10 +53,10 @@ public:
     void save_vtk(std::string fname) const override;
 
 private:
-    const std::vector<Point> _points;
-    const std::vector<std::vector<size_t>> _cells;
-    std::vector<std::array<size_t, 2>> _face_cells;
-    std::vector<std::array<size_t, 2>> _face_points;
+    const std::vector<Point> points_;
+    const std::vector<std::vector<size_t>> cells_;
+    std::vector<std::array<size_t, 2>> face_cells_;
+    std::vector<std::array<size_t, 2>> face_points_;
 
     struct Cache {
         std::vector<Point> cell_centers;
@@ -71,7 +72,7 @@ private:
         void need_face_areas(const UnstructuredGrid2D& grid);
         void need_tab_cell_face(const UnstructuredGrid2D& grid);
     };
-    mutable Cache _cache;
+    mutable Cache cache_;
 
     void validate();
     void initialize();

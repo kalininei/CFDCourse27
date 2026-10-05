@@ -1,0 +1,72 @@
+\subsection{Работа с двумерными сетками}
+\label{sec:prog_grid}
+
+\subsubsection{Интерфейс работы с сетками}
+Все сетки в программе наследуются от абстрактного класса \cvar{IGrid}.
+Необходимые для работы с сетками таблицы узлов, свойств и связности доступны
+как виртуальные методы этого класса и объявлены в заголовочном файле \cvar{grid/i_grid.hpp}. Например
+\begin{itemize}
+\item \cvar{Point IGrid::point(size_t ipoint)} -- получить координату $i$-ой точки,
+\item \cvar{double IGrid::face_area(size_t iface)} -- площадь $i$-ой грани,
+\item \cvar{std::vector<int> IGrid::tab_cell_face(size_t icell)} -- получить список индексов граней для $i$-ой ячейки.
+\end{itemize}
+Грани (внутренние и граничные) пронумерованы сквозным образом.
+Координаты точек всегда трёхмерные. Для двумерных и одномерных задач ``лишние'' координаты приравниваются нулю.
+
+\subsubsection{Загрузка сеток}
+Для построения структурированных двумерных сеток необходимо использовать класс \cvar{RegularGrid2}:
+\begin{cppcode}
+// сетка 10х10 в единичном квадрате
+auto grid = std::make_shared<RegularGrid2D>(0, 0, 1, 1, 10, 10);
+\end{cppcode}
+
+Неструктурированные сетки должны быть прочитаны из файла:
+\begin{cppcode}
+// Читаем сетку из файла /app/test_data/pebigrid.vtk
+std::string fn = test_directory_file("pebigrid.vtk");
+UnstructuredGrid2D grid = UnstructuredGrid2D::vtk_read(fn);
+\end{cppcode}
+
+\subsubsection{Построение неструктурированных сеток}
+Строить неструктурированные сетки следует с помощью утилиты \ename{hybmesh}.
+В папке \ename{test_data} корневой директории репозитория лежат скрипты построения сеток:
+\begin{itemize}
+\item \ename{pebigrid.py} -- pebi--сетка,
+\item \ename{tetragrid.py} -- сетка, состоящая из произвольных (скошенных) трех- и четырехугольников.
+\end{itemize}
+Инструкции по запуску этих скриптов смотри п. \ref{sec:hybmesh}.
+Эти скрипты строят равномерную неструктурированную сетку
+в единичном квадрате
+и записывают её в файл vtk, который впоследствии можно загрузить
+в расчётную программу.
+В каждом из скриптов есть параметр \cvar{N}, означающий
+примерное количество ячеек в итоговой сетке.
+Меняя его значение можно строить сетки разного разрешения.
+
+Для загрузки построенной сетки в решатель необходимо файл
+с сеткой поместить в каталог \ename{test_data}
+и далее загрузить её в класс \cvar{UnstructuredGrid2D}.
+
+
+\subsubsection{Сохранение сеточных данных}
+С помощью метода \cvar{IGrid::save_vtk} сетка может быть экспортирована в vtk формат и просмотрена в Paraview.
+Дополнить файл численными данными можно с помощью методов
+\cvar{VtkUtils::add_cell_data} -- для данных, заданных в центрах ячеек,
+\cvar{VtkUtils::add_point_data} -- для данных, заданных в узлах сетки.
+
+\begin{cppcode}
+// Создать сеточный вектор для центров ячеек
+std::vector<double> field(grid.n_cells());
+for (size_t icell = 0; icell < grid.n_cells(); ++icell) {
+    Point p = grid.cell_center(icell);  // центр ячейки
+    field[i] = p.x + 2*p.y*p.y;    // значение поля в центре ячейки
+}
+
+// сохранить сетку в файл grid_data.vtk
+grid.save_vtk("grid_data.vtk");
+
+// добавить в файл "grid_data.vtk" созданный сеточный вектор под именем "field"
+VtkUtils::add_cell_data(field, "field", "grid_data.vtk");
+\end{cppcode}
+
+В \secref{sec:paraview} приведены некоторые приёмы визуализации численного решения.

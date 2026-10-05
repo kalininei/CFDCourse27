@@ -1,7 +1,7 @@
 " Табы 4 пробела
 set tabstop=4 shiftwidth=4 softtabstop=4 expandtab
 
-autocmd FileType make setlocal noexpandtab
+"autocmd FileType make setlocal noexpandtab
 set autoindent
 set smartindent
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-CONTAINER_NAME="cfd26"
+CONTAINER_NAME="cfd27"
 
 # Функция для поиска корня проекта
 find_project_root() {

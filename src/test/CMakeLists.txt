@@ -7,6 +7,8 @@ set(SRC
     mat_test.cpp
     geom_test.cpp
     poisson_fdm_test.cpp
+    poisson_fvm_test.cpp
+    poisson_fvmex_test.cpp
 )
 
 add_executable(

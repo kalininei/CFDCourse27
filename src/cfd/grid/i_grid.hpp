@@ -83,10 +83,21 @@ public:
     // resuling cell indices are sorted
     virtual std::vector<size_t> tab_point_cell(size_t) const;
 
+    virtual std::vector<size_t> internal_faces() const;
     virtual std::vector<size_t> boundary_faces() const;
     virtual std::vector<size_t> boundary_points() const;
     virtual std::vector<size_t> boundary_cells() const;
     virtual std::pair<Point, Point> box() const;
+    size_t face_boundary_index(size_t iface) const;
+
+    struct BoundaryFaceInfo {
+        size_t iface;        // face index
+        size_t ibnd;         // index in boundary_faces() list
+        size_t icell;        // near boundary cell index
+        Vector outer_normal; // outer normal with respect to grid area
+        bool is_reverted;    // is outer_normal is reverted from face normal
+    };
+    const BoundaryFaceInfo& boundary_face_info(size_t iface) const;
 
     /**
      * @brief Saves grid to vtk format
@@ -101,14 +112,20 @@ private:
         std::vector<size_t> boundary_points;
         std::vector<size_t> boundary_cells;
         std::vector<std::vector<size_t>> point_cell;
+        std::vector<size_t> internal_faces;
+        std::vector<size_t> face_bnd;
+        std::vector<BoundaryFaceInfo> boundary_face_info;
 
         void clear();
         void need_boundary_faces(const IGrid& grid);
         void need_boundary_points(const IGrid& grid);
         void need_boundary_cells(const IGrid& grid);
+        void need_internal_faces(const IGrid& grid);
         void need_point_cell(const IGrid& grid);
+        void need_face_bnd(const IGrid& grid);
+        void need_boundary_face_info(const IGrid& grid);
     };
-    mutable Cache _cache;
+    mutable Cache cache_;
 };
 
 /**

@@ -1,3 +1,4 @@
+#include "cfd/debug/saver.hpp"
 #include "cfd/grid/cell_finder.hpp"
 #include "cfd/grid/grid1d.hpp"
 #include "cfd/grid/regular_grid2d.hpp"
@@ -160,4 +161,47 @@ TEST_CASE("CellFinder, 2D", "[cell-finder2]") {
     CHECK(finder(Point{0.61, 0.61}) == 124);
     CHECK(finder(Point{1.0 + 2e-13, 0.7}) == 427);
     CHECK(finder(Point{1.0 + 2e-12, 0.7}) == INVALID_INDEX);
+}
+
+TEST_CASE("boundary faces, 2D", "[boundary-faces]") {
+    {
+        auto grid = UnstructuredGrid2D::vtk_read(test_directory_file("tetragrid_500.vtk"));
+
+        // boundary faces
+        CHECK(grid.boundary_faces().size() == 72);
+        CHECK(grid.boundary_faces()[0] == 0);
+        CHECK(grid.boundary_faces()[5] == 10);
+        CHECK(grid.boundary_faces()[71] == 175);
+
+        // internal faces
+        CHECK(grid.internal_faces().size() == 897);
+        CHECK(grid.internal_faces().size() + grid.boundary_faces().size() == grid.n_faces());
+        CHECK(grid.internal_faces()[0] == 3);
+        CHECK(grid.internal_faces()[20] == 36);
+
+        // face boundary index
+        CHECK(grid.face_boundary_index(3) == INVALID_INDEX);
+        CHECK(grid.face_boundary_index(14) == 7);
+
+        // boundary face info
+        CHECK_THROWS(grid.boundary_face_info(931));
+        auto info = grid.boundary_face_info(25);
+        CHECK(info.iface == 25);
+        CHECK(info.ibnd == 11);
+        CHECK(info.icell == 232);
+        CHECK(info.outer_normal.x == Approx(0.0));
+        CHECK(info.outer_normal.y == Approx(-1.0));
+        CHECK(info.is_reverted == false);
+    }
+    {
+        auto grid = RegularGrid2D(0, 1, 0, 1, 3, 3);
+        dbg::save_face_data(grid, std::vector<double>(grid.n_faces(), 0));
+        auto info = grid.boundary_face_info(0);
+        CHECK(info.iface == 0);
+        CHECK(info.ibnd == 0);
+        CHECK(info.icell == 0);
+        CHECK(info.outer_normal.x == Approx(0.0));
+        CHECK(info.outer_normal.y == Approx(-1.0));
+        CHECK(info.is_reverted == true);
+    }
 }

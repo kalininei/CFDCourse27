@@ -54,6 +54,18 @@ void IGrid::Cache::need_boundary_cells(const IGrid& grid) {
     boundary_cells = std::vector<size_t>(cells.begin(), cells.end());
 }
 
+void IGrid::Cache::need_internal_faces(const IGrid& grid) {
+    if (internal_faces.size() > 0) {
+        return;
+    }
+    for (size_t iface = 0; iface < grid.n_faces(); ++iface) {
+        std::array<size_t, 2> cc = grid.tab_face_cell(iface);
+        if (cc[0] != INVALID_INDEX && cc[1] != INVALID_INDEX) {
+            internal_faces.push_back(iface);
+        }
+    }
+}
+
 void IGrid::Cache::need_point_cell(const IGrid& grid) {
     if (point_cell.size() > 0) {
         return;
@@ -69,27 +81,63 @@ void IGrid::Cache::need_point_cell(const IGrid& grid) {
     }
 }
 
+void IGrid::Cache::need_face_bnd(const IGrid& grid) {
+    if (face_bnd.size() > 0) {
+        return;
+    }
+    need_boundary_faces(grid);
+    face_bnd.resize(grid.n_faces(), INVALID_INDEX);
+    for (size_t ibnd = 0; ibnd < boundary_faces.size(); ++ibnd) {
+        face_bnd[boundary_faces[ibnd]] = ibnd;
+    }
+}
+
+void IGrid::Cache::need_boundary_face_info(const IGrid& grid) {
+    if (boundary_face_info.size() > 0) {
+        return;
+    }
+    need_boundary_faces(grid);
+    for (size_t ibnd = 0; ibnd < boundary_faces.size(); ++ibnd) {
+        size_t iface = boundary_faces[ibnd];
+        auto [icell, cell_right] = grid.tab_face_cell(iface);
+        Vector outer_normal = grid.face_normal(iface);
+        bool is_reverted = false;
+        if (icell == INVALID_INDEX) {
+            icell = cell_right;
+            outer_normal *= -1.0;
+            is_reverted = true;
+        }
+        boundary_face_info.push_back(IGrid::BoundaryFaceInfo{
+            .iface = iface, .ibnd = ibnd, .icell = icell, .outer_normal = outer_normal, .is_reverted = is_reverted});
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // IGrid
 ///////////////////////////////////////////////////////////////////////////////
 std::vector<size_t> IGrid::boundary_faces() const {
-    _cache.need_boundary_faces(*this);
-    return _cache.boundary_faces;
+    cache_.need_boundary_faces(*this);
+    return cache_.boundary_faces;
 }
 
 std::vector<size_t> IGrid::boundary_points() const {
-    _cache.need_boundary_points(*this);
-    return _cache.boundary_points;
+    cache_.need_boundary_points(*this);
+    return cache_.boundary_points;
 }
 
 std::vector<size_t> IGrid::boundary_cells() const {
-    _cache.need_boundary_cells(*this);
-    return _cache.boundary_cells;
+    cache_.need_boundary_cells(*this);
+    return cache_.boundary_cells;
+}
+
+std::vector<size_t> IGrid::internal_faces() const {
+    cache_.need_internal_faces(*this);
+    return cache_.internal_faces;
 }
 
 std::vector<size_t> IGrid::tab_point_cell(size_t ipoint) const {
-    _cache.need_point_cell(*this);
-    return _cache.point_cell[ipoint];
+    cache_.need_point_cell(*this);
+    return cache_.point_cell[ipoint];
 }
 
 std::pair<Point, Point> IGrid::box() const {
@@ -108,4 +156,18 @@ std::pair<Point, Point> IGrid::box() const {
     }
 
     return {pmin, pmax};
+}
+
+size_t IGrid::face_boundary_index(size_t iface) const {
+    cache_.need_face_bnd(*this);
+    return cache_.face_bnd[iface];
+}
+
+const IGrid::BoundaryFaceInfo& IGrid::boundary_face_info(size_t iface) const {
+    cache_.need_boundary_face_info(*this);
+    size_t ibnd = face_boundary_index(iface);
+    if (ibnd == INVALID_INDEX) {
+        throw std::runtime_error(std::format("Face {} is not a boundary face", iface));
+    }
+    return cache_.boundary_face_info[ibnd];
 }

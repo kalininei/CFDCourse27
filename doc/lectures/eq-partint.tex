@@ -34,6 +34,21 @@ $$
 $$
 А формула \cref{eq:partint_div} -- есть многомерное обобщение этого выражения.
 
+Если в формулу \cref{eq:partint_div}
+подставить выражение
+$\vec v = \sum_i u \vec e_i$,
+где $\vec e_i$ -- единичный базисный вектор в направлении $x_i$,
+то получим
+\begin{equation*}
+\arint{\sum_i\dfr{u}{x_i} \vec e_i}{E}{\vec x} = \arint{u \, \sum_i \vec e_i \cdot \vec n}{\Gamma}{s}.
+\end{equation*}
+Перепишем в набла нотации:
+\begin{equation}
+\label{eq:partint_grad}
+\arint{\nabla u}{E}{\vec x} = \arint{u \, \vec n}{\Gamma}{s}.
+\end{equation}
+
+
 \subsubsection{Интегрирование по частям}
 
 Подставив в \cref{eq:partint_div} $\vec v = f\vec u$, где $f$ -- некоторая скалярная функция, и 
