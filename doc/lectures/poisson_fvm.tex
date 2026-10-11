@@ -748,7 +748,9 @@ TODO
 \end{array}
 \end{equation}
 
-Слагаемое в правой части будет учитано в аналогичной процедуре:
+Слагаемое в правой части будет учитано в аналогичной процедуре, которую следует запускать после
+установки правой части циклом \cref{eq:fvm_assem_f}:
+
 \begin{equation}
 \label{eq:fvm_assem_extended_explicit_corr_rhs}
 \begin{array}{ll}
@@ -783,7 +785,7 @@ TODO
 \item Собрать матрицу левой части по процедуре \cref{eq:fvm_assem_extended_explicit_corr_lhs}
 \item Собрать вектор $b^0$ -- базовую часть правого столбца СЛАУ. Для этого инициализировать его нулями, потом применить алгоритм \cref{eq:fvm_assem_f}
 \item Применить процедуры для граничных условий \cref{eq:fvm_assem_bc1_extended,eq:fvm_assem_bc2_extended,eq:fvm_assem_bc3_extended,eq:fvm_assem_bcp_extended}
-\item Задать начальное приближение $\check u$
+\item Задать начальное приближение $\check u$. Если подходящего приближения нет, инициализировать его нулями.
 \end{enumerate}
 {\rm Итерация на этапе расчёта}
 \begin{enumerate}
@@ -791,10 +793,14 @@ TODO
 \item Найти вектор $corr$ по формуле \cref{eq:fvm_corr_vec}
 \item Инициализировать вектор правой части $b = b^0$ и далее добавить в него поправку согласно \cref{eq:fvm_assem_extended_explicit_corr_rhs}
 \item При наличии периодических условий применить процедуру \cref{eq:fvm_assem_bc_extended_explicit_corr_bcp}
-\item Посчитать невязку $r = ||b - A \check u||$. Если она мала, выйти из цикла
 \item Решить СЛАУ $A u = b$
 \item Перейти на следующую итерацию $\check u = u$.
 \end{enumerate}
+
+В этой процедуре обычно задают фиксированное число итераций. Но если требуется
+расчёт до сходимости, то в качестве проверки для выхода из цикла можно
+использовать выражение $||b - A \check u|| < \eps$
+после сборки правой части $b$.
 
 \paragraph{Неявный учёт поправки}
 TODO

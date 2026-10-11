@@ -72,34 +72,40 @@ GaussLinearFvmCellGradient::GaussLinearFvmCellGradient(const IGrid& grid, const 
     for (size_t iface = 0; iface < grid.n_faces(); ++iface) {
         auto icollocs = colloc.tab_face_colloc(iface);
         Vector n = grid.face_area(iface) * grid.face_normal(iface);
-        // ---- internal face
         if (icollocs[0] < grid.n_cells() && icollocs[1] < grid.n_cells()) {
+
+            // double h = vector_abs(colloc.points[icollocs[0]] - colloc.points[icollocs[1]]);
+            // double hj = vector_abs(grid.face_center(iface) - colloc.points[icollocs[1]]);
+            // double wi = hj/h;
+            // double wj = 1.0 - wi;
+            double wi = 0.5;
+            double wj = 0.5;
+            // ---- internal face
             const auto& icells = icollocs;
             double vol1 = grid.cell_volume(icells[0]);
             double vol2 = grid.cell_volume(icells[1]);
             // left cell
-            grad_x.add_value(icells[0], icells[0], n.x * 0.5 / vol1);
-            grad_y.add_value(icells[0], icells[0], n.y * 0.5 / vol1);
-            grad_z.add_value(icells[0], icells[0], n.z * 0.5 / vol1);
-            grad_x.add_value(icells[0], icells[1], n.x * 0.5 / vol1);
-            grad_y.add_value(icells[0], icells[1], n.y * 0.5 / vol1);
-            grad_z.add_value(icells[0], icells[1], n.z * 0.5 / vol1);
+            grad_x.add_value(icells[0], icells[0], n.x * wi / vol1);
+            grad_y.add_value(icells[0], icells[0], n.y * wi / vol1);
+            grad_z.add_value(icells[0], icells[0], n.z * wi / vol1);
+            grad_x.add_value(icells[0], icells[1], n.x * wj / vol1);
+            grad_y.add_value(icells[0], icells[1], n.y * wj / vol1);
+            grad_z.add_value(icells[0], icells[1], n.z * wj / vol1);
             // right cell
-            grad_x.add_value(icells[1], icells[0], -n.x * 0.5 / vol2);
-            grad_y.add_value(icells[1], icells[0], -n.y * 0.5 / vol2);
-            grad_z.add_value(icells[1], icells[0], -n.z * 0.5 / vol2);
-            grad_x.add_value(icells[1], icells[1], -n.x * 0.5 / vol2);
-            grad_y.add_value(icells[1], icells[1], -n.y * 0.5 / vol2);
-            grad_z.add_value(icells[1], icells[1], -n.z * 0.5 / vol2);
-        }
-        // boundary face (no right cell)
-        else if (icollocs[1] >= grid.n_cells()) {
+            grad_x.add_value(icells[1], icells[0], -n.x * wi / vol2);
+            grad_y.add_value(icells[1], icells[0], -n.y * wi / vol2);
+            grad_z.add_value(icells[1], icells[0], -n.z * wi / vol2);
+            grad_x.add_value(icells[1], icells[1], -n.x * wj / vol2);
+            grad_y.add_value(icells[1], icells[1], -n.y * wj / vol2);
+            grad_z.add_value(icells[1], icells[1], -n.z * wj / vol2);
+        } else if (icollocs[1] >= grid.n_cells()) {
+            // ---- boundary face (no right cell)
             double vol1 = grid.cell_volume(icollocs[0]);
             grad_x.add_value(icollocs[0], icollocs[1], n.x / vol1);
             grad_y.add_value(icollocs[0], icollocs[1], n.y / vol1);
             grad_z.add_value(icollocs[0], icollocs[1], n.z / vol1);
-            // boundary face (no left cell)
         } else {
+            // ---- boundary face (no left cell)
             double vol2 = grid.cell_volume(icollocs[1]);
             grad_x.add_value(icollocs[1], icollocs[0], -n.x / vol2);
             grad_y.add_value(icollocs[1], icollocs[0], -n.y / vol2);
@@ -177,6 +183,11 @@ IFvmFaceGradient::IFvmFaceGradient(const IGrid& grid, const FvmExtendedCollocati
         } else {
             double wi = 0.5;
             double wj = 0.5;
+            // double h = vector_abs(colloc.points[i] - colloc.points[j]);
+            // double hj = vector_abs(grid.face_center(iface) - colloc.points[j]);
+            // double wi = hj/ h;
+            // double wj = 1.0 - wi;
+
             copy_row(wi, iface, i);
             copy_row(wj, iface, j);
         }
