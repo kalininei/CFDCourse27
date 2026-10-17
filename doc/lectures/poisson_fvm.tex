@@ -949,7 +949,7 @@ $$h_{ij}^+ + h_{ij}^- = h_{ij}.$$
 \end{equation*}
 то формула \cref{eq:fvm_lambda_ij_1} выполнится точно.
 
-\subsubsection{Аппроксимация нормальной производной с учётом логарифмической особенности}
+\subsubsection{Аппроксимация нормальной производной с учётом логарифмического профиля}
 \label{sec:fvm_log_singularity}
 Рассмотрим уравнение Лапласа ($f=0$) в двусвязной области, образованной
 внешним контуром и внутренним кругом с центром в точке $\vec C$ (\figref{fig:radial_singularity}).
@@ -996,9 +996,9 @@ u(r) = \frac{\ln r - \ln r_i}{\ln r_j - \ln r_i}\left(u_j - u_i\right) + u_i.
 \end{equation}
 Это выражение будем использовать вместо
 \cref{eq:fvm_dudn_dudc} для вычисления производной
-на грани с логарифмической особенностью.
+на грани.
 
-Учёт этой особенности можно реализовать за счёт модификации
+Учёт логарифмического профиля можно реализовать за счёт модификации
 коэффициента диффузии $\lambda_{ij}$ на граничной грани.
 Выражение \cref{eq:fvm_dudn_radial}
 можно свести к 
@@ -1025,22 +1025,75 @@ u(r) = \frac{\ln r - \ln r_i}{\ln r_j - \ln r_i}\left(u_j - u_i\right) + u_i.
 Поэтому она будет справедлива в любой системе координат.
 
 Особенность выбора радиально-симметричной постановки
-проявится только в вычислении площади грани $|\gamma|$
-и объёма ячейки $|E|$, которые в этой постановке являются телами
+проявится только в вычислении свойств грани $|\gamma|$
+и ячейки $|E|$, которые в этой постановке являются телами
 вращения вокруг оси $Oz$.
-Вычислим объём как
-\begin{equation*}
-|E| = \int\limits_{E} d\vec x = \int\limits_0^{2\pi}\left(\iint\limits_{|E|_{rz}} r d r d z\right) d\phi  =
-    2\pi \underbrace{\frac{1}{|E|_{rz}}\iint r \, d r d z}_{r_E} \, |E|_{rz} 
-\end{equation*}
-где $|E|_{rz}$ и $r_E$ -- объём и $r$--координата центра масс ячейки
-в декартовой двумерной системе координат $(r, z)$.
-Аналогичные рассуждения справедливы и для определения площади грани
-через её двумерную площадь $|\gamma|_{rz}$ и центр масс $r_\gamma$.
-Тогда окончательно запишем
+
+Объём ячейки вычисляется как
 \begin{equation}
-\label{eq:fvm_radsym_measures}
-\left|E\right| = 2 \pi r_E |E|_{rz}, \qquad
-\left|\gamma\right| = 2 \pi r_\gamma |\gamma|_{rz}
+\label{eq:fvm_radsym_E}
+|E| = \int\limits_E \, dV = 2 \pi \iint\limits_{E_{rz}} r dr dz,
+\end{equation}
+где $|E_{rz}|$ -- это ячейка в координатах $(r, z)$.
+Центр масс с использованием найденной выше $|E|$ запишется:
+\begin{equation}
+\label{eq:fvm_radsym_Ec}
+\vec{x_c} = \frac{1}{|E|} \int\limits_E \vec{x} dV = \frac{2\pi}{|E|} \int\limits_{E_{rz}} \vec{x} r dr dz,
+\end{equation}
+где вектор $\vec x$ имеет координаты $(r, z)$.
+
+Для вычисления свойств грани $\gamma$ учтём, что она является
+поверхностью вращения отрезка некоторой кривой, заданной в плоскости $(r, z)$.
+В общем случае запишем этот отрезок в параметрическом виде:
+\begin{equation*}
+r(t), \quad z(t), \quad t\in[t_0, t_1].
+\end{equation*}
+Тогда площадь грани имеет вид
+\begin{equation*}
+|\gamma| = \int dS = 2\pi\int\limits_{t_0}^{t_1} r(t) \sqrt{\dot r^2(t) + \dot z^2(t)} \, dt
+\end{equation*}
+а центр масс:
+\begin{equation*}
+\vec{g}_c = \frac{1}{|\gamma|} \int \vec{x} dS = \frac{2\pi}{|\gamma|}\int\limits_{t_0}^{t_1} \vec x r(t) \sqrt{\dot r^2(t) + \dot z^2(t)} \, dt.
+\end{equation*}
+В рассматриваемом методе конечных объёмов рассматриваются только плоские грани. Тогда грань
+в плоскости $r, z$ имеет вид прямой между точками $(r_1, z_1)$ и $(r_2, z_2)$.
+Поэтому параметрически кривая определяется как
+\begin{equation*}
+r(t) = (1-t)r_1 + t r_2, \quad z(t) = (1-t) z_1 + t z_2, \quad t\in[0, 1].
+\end{equation*}
+Подставляя эти выражения в интегралы выше получим
+площадь грани
+\begin{equation}
+\label{eq:fvm_radsym_gamma}
+|\gamma| = \pi \, L \, (r_1 + r_2), \qquad L = \sqrt{(r_2 - r_1)^2 + (z_2 - z_1)^2}.
+\end{equation}
+и центр грани
+\begin{equation}
+\label{eq:fvm_radsym_gammac}
+\vec{g_c} =
+\begin{cases}
+r_c = \dfrac{2}{3}\dfrac{r_1^2 + r_1 r_2 + r_2^2}{r_1 + r_2} \\[10pt]
+z_c = \dfrac{1}{3}\dfrac{r_1 z_2 + r_2 z_1 + 2 r_1 z_1 + 2 r_2 z_2}{r_1 + r_2}.
+\end{cases}
 \end{equation}
 
+Для одномерного радиально симметричного случая (без зависимости от $z$)
+для применения формул \cref{eq:fvm_radsym_E,eq:fvm_radsym_Ec,eq:fvm_radsym_gamma}
+каждую одномерную ячейку $r\in[r_1, r_2]$ удобно достроить по координате $z$ на единичную толщину $z\in[0,1]$.
+Тогда объём ячейки (из \cref{eq:fvm_radsym_E}) будет равен
+\begin{equation}
+\label{eq:fvm_radsym_E_1d}
+|E| = 2 \pi \int\limits_0^1\int\limits_{r_1}^{r_2} r dr dz = \pi (r_2^2 - r_1^2),
+\end{equation}
+центр масс ячейки (из \cref{eq:fvm_radsym_Ec}):
+\begin{equation}
+\label{eq:fvm_radsym_Ec_1d}
+r_c = \frac{2 \pi}{|E|}\int\limits_0^1\int\limits_{r_1}^{r_2} r^2\, drdz = \frac{2}{3}\frac{r_2^3 - r_1^3}{r_2^2 - r_1^2}.
+\end{equation}
+а площадь грани (из \cref{eq:fvm_radsym_gamma}):
+\begin{equation}
+\label{eq:fvm_radsym_gamma_1d}
+|\gamma| = 2 \pi r_\gamma,
+\end{equation}
+где $r_\gamma$ -- это координата грани в одномерном пространcтве $r$.

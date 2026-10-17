@@ -9,6 +9,7 @@ set(SRC
     poisson_fdm_test.cpp
     poisson_fvm_test.cpp
     poisson_fvmex_test.cpp
+    poisson_log_fvm_test.cpp
 )
 
 add_executable(

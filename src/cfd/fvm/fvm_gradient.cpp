@@ -19,6 +19,30 @@ DenseMatrix least_squares_inv(const DenseMatrix& a) {
     return inv_at_a.mult_mat(at);
 }
 
+std::array<CsrMatrix, 3> assemble_fvm_cell_gradient_1d(const IGrid& grid, const FvmExtendedCollocations& colloc) {
+    LodMatrix grad_x(grid.n_cells());
+
+    for (size_t icell = 0; icell < grid.n_cells(); ++icell) {
+        const std::vector<size_t>& collocs = colloc.tab_colloc_colloc(icell);
+
+        DenseMatrix amat(collocs.size(), 1);
+        for (size_t i = 0; i < collocs.size(); ++i) {
+            Vector c = colloc.points[collocs[i]] - colloc.points[icell];
+            amat.set_value(i, 0, c.x);
+        }
+        DenseMatrix lsi = least_squares_inv(amat);
+        double diag_x = 0;
+        for (size_t i = 0; i < collocs.size(); ++i) {
+            double vx = lsi.value(0, i);
+            grad_x.set_value(icell, collocs[i], vx);
+            diag_x -= vx;
+        }
+        grad_x.set_value(icell, icell, diag_x);
+    }
+
+    return {grad_x.to_csr()};
+}
+
 std::array<CsrMatrix, 3> assemble_fvm_cell_gradient_2d(const IGrid& grid, const FvmExtendedCollocations& colloc) {
     LodMatrix grad_x(grid.n_cells());
     LodMatrix grad_y(grid.n_cells());
@@ -51,7 +75,9 @@ std::array<CsrMatrix, 3> assemble_fvm_cell_gradient_2d(const IGrid& grid, const 
 }
 
 std::array<CsrMatrix, 3> assemble_fvm_cell_gradient(const IGrid& grid, const FvmExtendedCollocations& colloc) {
-    if (grid.dim() == 2) {
+    if (grid.dim() == 1) {
+        return assemble_fvm_cell_gradient_1d(grid, colloc);
+    } else if (grid.dim() == 2) {
         return assemble_fvm_cell_gradient_2d(grid, colloc);
     } else {
         _THROW_NOT_IMP_;
@@ -113,23 +139,28 @@ GaussLinearFvmCellGradient::GaussLinearFvmCellGradient(const IGrid& grid, const 
         }
     }
     data_[0] = grad_x.to_csr();
-    data_[1] = grad_y.to_csr();
+    if (grid.dim() > 1) {
+        data_[1] = grad_y.to_csr();
+    }
     if (grid.dim() > 2) {
         data_[2] = grad_z.to_csr();
     }
 }
 
 std::vector<Vector> IFvmGradient::compute(const double* u) const {
-    std::vector<double> x = data_[0].mult_vec_p(u);
-    std::vector<double> y = data_[1].mult_vec_p(u);
+    std::vector<Vector> ret(data_[0].n_rows(), Vector(0));
 
-    std::vector<Vector> ret(x.size());
+    std::vector<double> x = data_[0].mult_vec_p(u);
     for (size_t i = 0; i < ret.size(); ++i) {
         ret[i].x = x[i];
-        ret[i].y = y[i];
-        ret[i].z = 0.0;
     }
 
+    if (data_[1].n_rows() > 0) {
+        std::vector<double> y = data_[1].mult_vec_p(u);
+        for (size_t i = 0; i < ret.size(); ++i) {
+            ret[i].y = y[i];
+        }
+    }
     if (data_[2].n_rows() > 0) {
         std::vector<double> z = data_[2].mult_vec_p(u);
         for (size_t i = 0; i < ret.size(); ++i) {
@@ -162,12 +193,14 @@ IFvmFaceGradient::IFvmFaceGradient(const IGrid& grid, const FvmExtendedCollocati
         size_t aend = cg.mat_x().addr[irow + 1];
         const size_t* cols = cg.mat_x().cols.data() + astart;
         const double* xdata = cg.mat_x().vals.data() + astart;
-        const double* ydata = cg.mat_y().vals.data() + astart;
+        const double* ydata = (grid.dim() > 1) ? cg.mat_y().vals.data() + astart : nullptr;
         const double* zdata = (grid.dim() > 2) ? cg.mat_z().vals.data() + astart : nullptr;
         for (size_t a = 0; a < aend - astart; ++a) {
             size_t col = cols[a];
             grad_x.add_value(target, col, c * xdata[a]);
-            grad_y.add_value(target, col, c * ydata[a]);
+            if (grid.dim() > 1) {
+                grad_y.add_value(target, col, c * ydata[a]);
+            }
             if (grid.dim() > 2) {
                 grad_z.add_value(target, col, c * zdata[a]);
             }
@@ -194,7 +227,9 @@ IFvmFaceGradient::IFvmFaceGradient(const IGrid& grid, const FvmExtendedCollocati
     }
 
     data_[0] = grad_x.to_csr();
-    data_[1] = grad_y.to_csr();
+    if (grid.dim() > 1) {
+        data_[1] = grad_y.to_csr();
+    }
     if (grid.dim() > 2) {
         data_[2] = grad_z.to_csr();
     }

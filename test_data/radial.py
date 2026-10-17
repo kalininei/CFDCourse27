@@ -1,7 +1,7 @@
 from hybmeshpack import hmscript as hm
 import math
 
-N = 50000
+N = 500
 output_name = f"radial_{N}.vtk"
 r0 = 0.05
 R = 1.0 + r0

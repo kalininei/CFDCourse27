@@ -32,7 +32,7 @@ LodMatrix assemble_faces_dudn_2d(const IGrid& grid, const FvmExtendedCollocation
     }
     auto find_closest_collocation = [&](size_t grid_point, size_t excl0, size_t excl1) {
         size_t ret = INVALID_INDEX;
-        double min_meas = 1e100;
+        double min_meas = std::numeric_limits<double>::max();
         Point p0 = grid.point(grid_point);
         for (size_t icolloc: tab_point_colloc[grid_point]) {
             if (icolloc != excl0 && icolloc != excl1) {
@@ -42,6 +42,9 @@ LodMatrix assemble_faces_dudn_2d(const IGrid& grid, const FvmExtendedCollocation
                     ret = icolloc;
                 }
             }
+        }
+        if (ret == INVALID_INDEX) {
+            _THROW_INTERNAL_ERROR_;
         }
         return ret;
     };
